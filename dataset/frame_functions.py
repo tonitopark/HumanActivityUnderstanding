@@ -38,9 +38,11 @@ class SelectFrames(object):
 
         elif method == 'random':
 
-            candidate_max_value = max(0, len(frame_indices) - self.clip_length - 1)
-            begin_index = np.random.randint(0, candidate_max_value)
+            candidate_max_value = max(1, len(frame_indices) - self.clip_length - 1)
+            begin_index = np.random.randint(low = 0, high = candidate_max_value)
             end_index = min(len(frame_indices), begin_index + self.clip_length)
+            print('max_{}_,min_{}__beging_{}_end_{}'.format(candidate_max_value, np.max(frame_indices),begin_index,end_index))
+
 
         indices = frame_indices[begin_index:end_index]
 

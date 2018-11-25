@@ -5,8 +5,8 @@ import os
 
 import torch.utils.data
 
-from Projects.HAV.dataset.frame_functions import SelectFrames
-from Projects.HAV.dataset.mappings import *
+from dataset.frame_functions import SelectFrames
+from dataset.mappings import *
 
 
 def video_loader(video_path, frame_indices):
@@ -163,28 +163,31 @@ def make_dataset(root_path,
 class VideoDataset(torch.utils.data.Dataset):
 
     def __init__(self,
-                 root_path,
+                 dataset_name,
+                 video_path,
                  annotation_path,
                  subset,
                  n_samples_for_each_video=1,
                  sample_duration=16,
-                 dataset_name='kinetics',
-                 get_loader=video_loader
-                 ):
+                 frame_mapper=None,
+                 get_loader = video_loader):
+
+
         self.data, self.class_names = make_dataset(
-            root_path, annotation_path, subset,
+            video_path, annotation_path, subset,
             n_samples_for_each_video,
             sample_duration,
             dataset_name)
         self.frame_loader = get_loader
-        self.frame_selector = SelectFrames(10)
-        self.frame_mapper = ComposeMappings([
-            CropFramePart(128),
-            ResizeFrame(256),
-            FlipFrame(),
-            ToTensor(),
-            NormalizeFrame([0, 0, 0], [1, 1, 1])
-        ])
+        self.frame_selector = SelectFrames(sample_duration)
+        self.frame_mapper = frame_mapper
+
+            # ComposeMappings([
+            # CropFramePart(128),
+            # ResizeFrame(256),
+            # FlipFrame(),
+            # ToTensor(),
+            # NormalizeFrame([0, 0, 0], [1, 1, 1])])
 
     def __getitem__(self, index):
         path = self.data[index]['video']

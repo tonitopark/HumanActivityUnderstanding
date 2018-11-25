@@ -1,6 +1,6 @@
 import torch.utils.data
 
-from Projects.HAV.dataset.videodataset import VideoDataset
+from dataset.videodataset import VideoDataset
 
 # For Kinetics
 print("Intitialize Dataset")
