@@ -139,12 +139,23 @@ if __name__ == '__main__':
 
     model.eval()
 
-#    test.test(test_loader, model, args, test_data.class_names)
+
+    video_results ={'results':{}}
+
     for i,(img_tensors, target_classes) in enumerate(test_dataset_loader):
 
         outputs = model(img_tensors)
 
         for (output,target_class) in zip(outputs[0],target_classes):
+
+            score_sorted, locs = torch.topk(output,k=10)
+
+            tmp_result = []
+            for score,loc in zip(score_sorted,locs):
+                tmp_result.append({
+                    'class_name': target_class
+                })
+
             print(output,target_class)
 
 
