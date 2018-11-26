@@ -201,7 +201,7 @@ class VideoDataset(torch.utils.data.Dataset):
         clip = [self.frame_mapper(img) for img in clip]
         clip = torch.stack(clip, 0).permute(1, 0, 2, 3)
 
-        target = self.data[index]['video_id']
+        target = self.data[index]
 
         return clip, target
 

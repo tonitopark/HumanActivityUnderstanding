@@ -11,6 +11,36 @@ from dataset.videodataset import *
 from argument_parser import parse_arguments
 
 
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+def calculate_accuracy(outputs, targets):
+    batch_size = targets.size(0)
+
+    _, pred = outputs.topk(1, 1, True)
+    pred = pred.t()
+    correct = pred.eq(targets.view(1, -1))
+    n_correct_elems = correct.float().sum().data[0]
+
+    return n_correct_elems / batch_size
+
 if __name__ == '__main__':
 
     args = parse_arguments()
@@ -70,6 +100,11 @@ if __name__ == '__main__':
 
     model.eval()
 
+
+
+    losses = AverageMeter()
+    accuracies = AverageMeter()
+
     result_buffer = {'results':{}}
 
     for i, (img_tensors, targets) in enumerate(test_dataset_loader):
@@ -77,27 +112,15 @@ if __name__ == '__main__':
         outputs = model(img_tensors)
         outputs = outputs[0];
 
-        video_ids = targets['video_id']
+        targets = targets['label']
 
-        for output, video_id in zip(outputs,video_ids):
+        loss = torch.nn.CrossEntropyLoss(output, target)
+        acc  = calculate_accuracy(outputs, targets)
 
-            score_sorted, class_id = torch.topk(output, k=10)
-            score_sorted = score_sorted.detach().numpy()
-            class_id_list = class_id.numpy()
+        losses.update(loss.data[0], img_tensors.size(0))
+        accuracies.update(acc, img_tensors.size(0))
 
-            tmp_buffer =[]
-            for score, class_id in zip(score_sorted, class_id_list):
-                 tmp_buffer.append({
-                    'class_name': str(test_dataset.class_names[class_id]),
-                    'score': float(score)} )
+    print(losses.avg)
+    print(accuracies.avg)
 
-            result_buffer['results'][video_id] = tmp_buffer
 
-        if (i % 100 == 0):
-            with open(os.path.join(args.result_path, 'test.json'), 'w') as fp:
-                json.dump(result_buffer, fp)
-                print(result_buffer)
-
-    with open(
-            os.path.join(args.result_path, 'test.json'), 'w') as fp:
-        json.dump(result_buffer, fp)
