@@ -123,7 +123,7 @@ def make_dataset(root_path,
             elif dataset_name == 'kinetics':
                 begin_t = 1
                 end_t = n_frames
-                video_id = video_names[i][:-14].split('/')[1]
+                video_id = video_names[i][:-14].split('/')[-1]
 
             sample = {
                 'video': video_path,
@@ -201,7 +201,7 @@ class VideoDataset(torch.utils.data.Dataset):
         clip = [self.frame_mapper(img) for img in clip]
         clip = torch.stack(clip, 0).permute(1, 0, 2, 3)
 
-        target = self.data[index]
+        target = self.data[index]['video_id']
 
         return clip, target
 
