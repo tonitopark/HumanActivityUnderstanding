@@ -268,7 +268,7 @@ class I3D(torch.nn.Module):
 
         self.dropout = torch.nn.Dropout(dropout_prob)
 
-        self.logits = Unit3Dpt(
+        self.conv3d_0c_1x1 = Unit3Dpt(
             in_channels = 1024,
             out_channels = num_classes,
             kernel_size=(1,1,1),
@@ -299,7 +299,7 @@ class I3D(torch.nn.Module):
         out = self.mixed_5c(out)
         out = self.avg_pool(out)
         out = self.dropout(out)
-        out = self.logits(out)
+        out = self.conv3d_0c_1x1(out) #logits(out)
         out = out.squeeze(3)
         out = out.squeeze(3)
         out_logits = out.mean(2)

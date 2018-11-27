@@ -16,7 +16,7 @@ def parse_arguments():
     )
     parser.add_argument(
         '--video_dir_name',
-        default='K400_SUB',
+        default='K400_JPG',
         type=str,
         help='Name of the directory where .jpg frames are located'
     )
@@ -53,7 +53,7 @@ def parse_arguments():
     )
     parser.add_argument(
         '--batch_size',
-        default=16,
+        default=8,
         type=int,
         help='Size of the batch')
     parser.add_argument(

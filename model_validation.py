@@ -37,9 +37,9 @@ def calculate_accuracy(outputs, targets):
     _, pred = outputs.topk(1, 1, True)
     pred = pred.t()
     correct = pred.eq(targets.view(1, -1))
-    n_correct_elems = correct.float().sum().data[0]
+    num_correct_predictions = correct.sum().item()
 
-    return n_correct_elems / batch_size
+    return num_correct_predictions / batch_size
 
 if __name__ == '__main__':
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
             args.crop_size = 224
             args.crop_method_test = 'center'
             args.crop_method_train = 'random'
-            args.num_frames_test = 24
+            args.num_frames_test = 16
 
         if args.model_name == 's3d':
             args.crop_size = 224
@@ -74,6 +74,10 @@ if __name__ == '__main__':
     torch.manual_seed(args.manual_seed)
 
     model = I3D(num_classes=args.num_class)
+    model.eval()
+    model.load_state_dict(torch.load('models/model_rgb.pth'))
+    model.cuda()
+
 
     frame_mapper = ComposeMappings([
         CropFramePart(args.crop_size, args.crop_method_test),
@@ -81,7 +85,6 @@ if __name__ == '__main__':
         NormalizeFrame(mean=[0, 0, 0], std=[1, 1, 1])
     ])
 
-    # frame_selector = SelectFrames(args.num_frames_test)
 
     test_dataset = VideoDataset(
         dataset_name='kinetics',
@@ -98,10 +101,10 @@ if __name__ == '__main__':
         num_workers=args.num_threads,
         pin_memory=True)
 
-    model.eval()
 
 
 
+    cross_entropy = torch.nn.CrossEntropyLoss()
     losses = AverageMeter()
     accuracies = AverageMeter()
 
@@ -109,18 +112,25 @@ if __name__ == '__main__':
 
     for i, (img_tensors, targets) in enumerate(test_dataset_loader):
 
-        outputs = model(img_tensors)
-        outputs = outputs[0];
+        # outputs = model(img_tensors)
+        # outputs = outputs[0];
+
+        #sample_var = torch.autograd.Variable(torch.from_numpy(img_tensors).cuda())
+        outputs, out_logit = model(img_tensors.cuda())
+        outputs = outputs.data.cpu()
 
         targets = targets['label']
 
-        loss = torch.nn.CrossEntropyLoss(output, target)
-        acc  = calculate_accuracy(outputs, targets)
+        loss = cross_entropy(outputs, targets)
+        accuracy= calculate_accuracy(outputs, targets)
 
-        losses.update(loss.data[0], img_tensors.size(0))
-        accuracies.update(acc, img_tensors.size(0))
+        losses.update(loss.item(), img_tensors.size(0))
+        accuracies.update(accuracy, img_tensors.size(0))
 
-    print(losses.avg)
-    print(accuracies.avg)
+
+        print('Loss : ', losses.avg, ' Accuracy : ',accuracies.avg)
+
+    print('Average_loss :',losses.avg)
+    print('Average_accuracy : ',accuracies.avg)
 
 
