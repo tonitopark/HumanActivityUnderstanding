@@ -112,10 +112,6 @@ if __name__ == '__main__':
 
     for i, (img_tensors, targets) in enumerate(test_dataset_loader):
 
-        # outputs = model(img_tensors)
-        # outputs = outputs[0];
-
-        #sample_var = torch.autograd.Variable(torch.from_numpy(img_tensors).cuda())
         outputs, out_logit = model(img_tensors.cuda())
         outputs = outputs.data.cpu()
 
