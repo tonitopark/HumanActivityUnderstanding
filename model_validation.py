@@ -62,7 +62,7 @@ if __name__ == '__main__':
             args.crop_size = 224
             args.crop_method_test = 'center'
             args.crop_method_train = 'random'
-            args.num_frames_test =180
+            args.num_frames_test =16
 
         if args.model_name == 's3d':
             args.crop_size = 224
@@ -92,6 +92,7 @@ if __name__ == '__main__':
         video_path=args.video_path,
         annotation_path=args.annotation_path,
         subset=args.test_source,
+        num_clips_per_video=8,
         sample_duration=args.num_frames_test,
         frame_mapper=frame_mapper)
 

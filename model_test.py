@@ -11,6 +11,7 @@ from dataset.videodataset import *
 from argument_parser import parse_arguments
 
 
+
 if __name__ == '__main__':
 
     args = parse_arguments()
@@ -44,20 +45,25 @@ if __name__ == '__main__':
     torch.manual_seed(args.manual_seed)
 
     model = I3D(num_classes=args.num_class)
+    model.eval()
+    model.load_state_dict(torch.load('models/model_rgb.pth'))
+    model.cuda()
+
 
     frame_mapper = ComposeMappings([
+        ResizeFrame(256),
         CropFramePart(args.crop_size, args.crop_method_test),
         ToTensor(),
-        NormalizeFrame(mean=[0, 0, 0], std=[1, 1, 1])
+        NormalizeFrameToUnity(-1,1)
     ])
 
-    # frame_selector = SelectFrames(args.num_frames_test)
 
     test_dataset = VideoDataset(
         dataset_name='kinetics',
         video_path=args.video_path,
         annotation_path=args.annotation_path,
         subset=args.test_source,
+        num_clips_per_video=6,
         sample_duration=args.num_frames_test,
         frame_mapper=frame_mapper)
 
@@ -68,32 +74,41 @@ if __name__ == '__main__':
         num_workers=args.num_threads,
         pin_memory=True)
 
-    model.eval()
 
     result_buffer = {'results':{}}
 
-    for i, (img_tensors, targets) in enumerate(test_dataset_loader):
+    for idx, (img_tensors, targets) in enumerate(test_dataset_loader):
 
-        outputs = model(img_tensors)
-        outputs = outputs[0];
+        outputs,out_logit = model(img_tensors.cuda())
+        outputs = outputs.data.cpu()
 
         video_ids = targets['video_id']
 
-        for output, video_id in zip(outputs,video_ids):
+        counter=0
+        prev_video_id = video_ids.pop(0)
+        output_buffer = list([outputs[0].data.cpu()])
+        for output, video_id in zip(outputs[1:],video_ids):
 
-            score_sorted, class_id = torch.topk(output, k=10)
-            score_sorted = score_sorted.detach().numpy()
-            class_id_list = class_id.numpy()
+            if prev_video_id != video_id:
 
-            tmp_buffer =[]
-            for score, class_id in zip(score_sorted, class_id_list):
-                 tmp_buffer.append({
-                    'class_name': str(test_dataset.class_names[class_id]),
-                    'score': float(score)} )
+                avg_score = torch.mean(torch.stack(output_buffer),dim=0)
+                score_sorted, class_id = torch.topk(avg_score, k=10)
+                score_sorted = score_sorted.detach().numpy()
+                class_id_list = class_id.numpy()
 
-            result_buffer['results'][video_id] = tmp_buffer
+                tmp_buffer = []
+                for score, class_id in zip(score_sorted, class_id_list):
+                     tmp_buffer.append({
+                        'class_name': str(test_dataset.class_names[class_id]),
+                        'score': float(score)} )
 
-        if (i % 100 == 0):
+                result_buffer['results'][video_id] = tmp_buffer
+                output_buffer = []
+
+            output_buffer.append(output.data.cpu())
+            previous_video_id=video_id
+
+        if (idx % 100 == 0):
             with open(os.path.join(args.result_path, 'test.json'), 'w') as fp:
                 json.dump(result_buffer, fp)
                 print(result_buffer)

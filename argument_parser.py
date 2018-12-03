@@ -53,7 +53,7 @@ def parse_arguments():
     )
     parser.add_argument(
         '--batch_size',
-        default=1,
+        default=8,
         type=int,
         help='Size of the batch')
     parser.add_argument(

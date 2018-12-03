@@ -25,7 +25,7 @@ def video_loader(video_path, frame_indices):
 def make_dataset(root_path,
                  annotation_path,
                  subset,
-                 n_samples_for_each_video,
+                 num_clips_per_video,
                  sample_duration,
                  dataset_name):
     # Load annotation data
@@ -137,24 +137,23 @@ def make_dataset(root_path,
             elif len(annotations) == 0:
                 sample['label'] = -1
 
-            if n_samples_for_each_video == 1:
+
+            if num_clips_per_video == 1:
 
                 sample['frame_indices'] = list(range(1, n_frames + 1))
-
                 dataset.append(sample)
 
-
             else:
-                if n_samples_for_each_video > 1:
-                    step = max(1,
-                               math.ceil((n_frames - 1 - sample_duration) /
-                                         (n_samples_for_each_video - 1)))
-                else:
-                    step = sample_duration
-                for j in range(1, n_frames, step):
+
+                if num_clips_per_video > 1:
+                    step = max(1, math.ceil((n_frames - 1 - sample_duration) /
+                                         (num_clips_per_video-1)))
+
+                for j in range(1, max(2, n_frames - sample_duration + 2 ), step):
+
                     sample_j = copy.deepcopy(sample)
                     sample_j['frame_indices'] = list(
-                        range(j, min(n_frames + 1, j + sample_duration)))
+                        range(j, min(n_frames + 1, j + max(step, sample_duration))))
                     dataset.append(sample_j)
 
     return dataset, idx_to_class
@@ -167,7 +166,7 @@ class VideoDataset(torch.utils.data.Dataset):
                  video_path,
                  annotation_path,
                  subset,
-                 n_samples_for_each_video=1,
+                 num_clips_per_video='full_frames',
                  sample_duration=16,
                  frame_mapper=None,
                  get_loader = video_loader):
@@ -175,7 +174,7 @@ class VideoDataset(torch.utils.data.Dataset):
 
         self.data, self.class_names = make_dataset(
             video_path, annotation_path, subset,
-            n_samples_for_each_video,
+            num_clips_per_video,
             sample_duration,
             dataset_name)
         self.frame_loader = get_loader
