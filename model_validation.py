@@ -10,7 +10,7 @@ from dataset.videodataset import *
 
 from argument_parser import parse_arguments
 
-
+import matplotlib.pyplot as plt
 
 
 class AverageMeter(object):
@@ -62,7 +62,7 @@ if __name__ == '__main__':
             args.crop_size = 224
             args.crop_method_test = 'center'
             args.crop_method_train = 'random'
-            args.num_frames_test = 16
+            args.num_frames_test =180
 
         if args.model_name == 's3d':
             args.crop_size = 224
@@ -80,9 +80,10 @@ if __name__ == '__main__':
 
 
     frame_mapper = ComposeMappings([
+        ResizeFrame(256),
         CropFramePart(args.crop_size, args.crop_method_test),
         ToTensor(),
-        NormalizeFrame(mean=[0, 0, 0], std=[1, 1, 1])
+        NormalizeFrameToUnity(-1,1)
     ])
 
 
@@ -109,13 +110,20 @@ if __name__ == '__main__':
     accuracies = AverageMeter()
 
     result_buffer = {'results':{}}
-
+    #sample = np.load('v_CricketShot_g04_c01_rgb.npy').transpose(0, 4, 1, 2, 3)
     for i, (img_tensors, targets) in enumerate(test_dataset_loader):
+
+        #img_tensors = torch.autograd.Variable(torch.from_numpy(sample).cuda())
 
         outputs, out_logit = model(img_tensors.cuda())
         outputs = outputs.data.cpu()
-
         targets = targets['label']
+        #targets = torch.tensor([227])
+
+        # for img in img_tensors.permute(0,2,3,4,1).contiguous().view(-1,224,224,3):
+        #     plt.imshow(img)
+        #     plt.show()
+
 
         loss = cross_entropy(outputs, targets)
         accuracy= calculate_accuracy(outputs, targets)

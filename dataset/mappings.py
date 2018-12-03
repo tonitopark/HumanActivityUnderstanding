@@ -31,6 +31,23 @@ class NormalizeFrame(object):
     def randomize(self):
         pass
 
+class NormalizeFrameToUnity(object):
+
+    def __init__(self,lb,ub):
+        self.lb=lb
+        self.up=ub
+
+    def __call__(self,image_tensor):
+        for image in image_tensor:
+            image.mul_(2*self.up).add_(1*self.lb)
+
+        return image_tensor
+
+    def randomize(self):
+        pass
+
+
+
 
 class FlipFrame(object):
 
@@ -105,13 +122,17 @@ class CropFramePart(object):
 
     def __call__(self, image_pil):
 
+        # import matplotlib.pyplot as plt
+        # plt.imshow(image_pil)
+        # plt.show()
+
         width, height = image_pil.size
         x_topleft = 0
         y_topleft = 0
 
         if self.crop_method == 'center':
-            x_topleft = int(round(width - self.crop_size[0] / 2.))
-            y_topleft = int(round(height - self.crop_size[1] / 2.))
+            x_topleft = int(round(width/2. - self.crop_size[0] / 2.))
+            y_topleft = int(round(height/2. - self.crop_size[1] / 2.))
 
         elif self.crop_method == 'topleft':
             x_topleft = 0
@@ -133,6 +154,8 @@ class CropFramePart(object):
                                y_topleft,
                                x_topleft + self.crop_size[0],
                                y_topleft + self.crop_size[1]))
+
+
 
     def randomize(self):
         if self.select_position_at_random:
