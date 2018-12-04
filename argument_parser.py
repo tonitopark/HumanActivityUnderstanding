@@ -56,16 +56,20 @@ def parse_arguments():
         default=8,
         type=int,
         help='Size of the batch')
+
     parser.add_argument(
         '--num_threads',
         default=4,
         type=int,
         help='Number of threads for computation ')
+
     parser.add_argument(
-        '--num_topk',
-        default=10,
+        '--num_top_k',
+        default=5,
         type=int,
         help='Number of top k high score classes in a video')
+
+
 
     args = parser.parse_args()
 
