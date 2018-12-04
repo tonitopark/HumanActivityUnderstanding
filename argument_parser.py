@@ -61,6 +61,11 @@ def parse_arguments():
         default=4,
         type=int,
         help='Number of threads for computation ')
+    parser.add_argument(
+        '--num_topk',
+        default=10,
+        type=int,
+        help='Number of top k high score classes in a video')
 
     args = parser.parse_args()
 

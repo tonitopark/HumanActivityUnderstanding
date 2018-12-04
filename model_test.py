@@ -48,6 +48,7 @@ if __name__ == '__main__':
     model.eval()
     model.load_state_dict(torch.load('models/model_rgb.pth'))
     model.cuda()
+    model = torch.nn.DataParallel(model,device_ids=None)
 
 
     frame_mapper = ComposeMappings([
@@ -72,7 +73,7 @@ if __name__ == '__main__':
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_threads,
-        pin_memory=True)
+        pin_memory=False)
 
 
     result_buffer = {'results':{}}
@@ -84,25 +85,39 @@ if __name__ == '__main__':
 
         video_ids = targets['video_id']
 
+
+        given_labels = targets['label']
+
+
+
         counter=0
         prev_video_id = video_ids.pop(0)
         output_buffer = list([outputs[0].data.cpu()])
-        for output, video_id in zip(outputs[1:],video_ids):
+        for output, video_id , label in zip(outputs[1:],video_ids,given_labels):
 
             if prev_video_id != video_id:
 
-                avg_score = torch.mean(torch.stack(output_buffer),dim=0)
-                score_sorted, class_id = torch.topk(avg_score, k=10)
+                score_average = torch.mean(torch.stack(output_buffer),dim=0)
+                score_sorted, class_id = torch.topk(score_average, k=args.num_topk)
                 score_sorted = score_sorted.detach().numpy()
                 class_id_list = class_id.numpy()
 
                 tmp_buffer = []
-                for score, class_id in zip(score_sorted, class_id_list):
+                for idx, (score, class_id) in enumerate(zip(score_sorted, class_id_list)):
                      tmp_buffer.append({
+                        'rank' : idx,
                         'class_name': str(test_dataset.class_names[class_id]),
+                        'calss_id': int(class_id),
                         'score': float(score)} )
 
-                result_buffer['results'][video_id] = tmp_buffer
+                if int(label) != -1:
+                    correct_label = {'corrent_name': test_dataset.class_names[int(label)],
+                                'correct_id' : int(label)}
+                else:
+                    correct_label = {'corrent_name': 'Not Given',
+                                'correct_id' : int(label)}
+
+                result_buffer['results'][video_id] = [correct_label, tmp_buffer]
                 output_buffer = []
 
             output_buffer.append(output.data.cpu())
@@ -111,8 +126,9 @@ if __name__ == '__main__':
         if (idx % 100 == 0):
             with open(os.path.join(args.result_path, 'test.json'), 'w') as fp:
                 json.dump(result_buffer, fp)
-                print(result_buffer)
+
 
     with open(
             os.path.join(args.result_path, 'test.json'), 'w') as fp:
         json.dump(result_buffer, fp)
+

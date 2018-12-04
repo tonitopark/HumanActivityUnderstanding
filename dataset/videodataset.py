@@ -70,8 +70,9 @@ def make_dataset(root_path,
         for key, value in data['database'].items():
             this_subset = value['subset']
             if this_subset == subset:
-                if subset == 'test':
+                if subset == 'testing':
                     video_names.append('test/{}'.format(key))
+                    annotations.append(value['annotations'])
                 elif subset == 'training':
                     label = value['annotations']['label']
                     video_names.append('train/{}/{}'.format(label, key))
