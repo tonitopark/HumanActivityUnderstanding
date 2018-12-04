@@ -1,4 +1,3 @@
-
 import os
 import json
 import numpy as np
@@ -15,7 +14,6 @@ if __name__ == '__main__':
     args = parse_arguments()
     if args.dataset_path:
         args.result_path = os.path.join(args.dataset_path, args.video_dir_name, args.result_dir_name)
-
 
     with open(os.path.join(args.result_path, 'test.json'), 'r') as result_file:
         result_buffer = json.load(result_file)
@@ -41,7 +39,6 @@ if __name__ == '__main__':
     prediction = pd.DataFrame({'video_id': prediction_video_list,
                                'label': prediction_label_list,
                                'score': prediction_score_list})
-
 
     unique_video_ids = np.unique(ground_truth['video_id'].values)
 
@@ -75,4 +72,4 @@ if __name__ == '__main__':
 
     top_k_accuracy = float(top_k_hit_vector.mean())
 
-    print('The Top-{} Accuary is '.format(args.num_top_k),top_k_accuracy)
+    print('The Top-{} Accuary is '.format(args.num_top_k), top_k_accuracy)
