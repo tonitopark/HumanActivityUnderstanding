@@ -32,6 +32,13 @@ def parse_arguments():
         type=str,
         help='name of the directory to store the result'
     )
+
+    parser.add_argument(
+        '--num_clips_per_video',
+        default=4,
+        type=int,
+        help='Number of clips to sample from each video')
+
     parser.add_argument(
         '--manual_seed',
         default=1,
@@ -48,7 +55,7 @@ def parse_arguments():
         '--test_source',
         default='validation',
         type=str,
-        help='Test can be performed on ( test | validation ) dataset'
+        help='Test can be performed on ( test or testing | val or validation ) dataset'
 
     )
     parser.add_argument(
@@ -68,7 +75,6 @@ def parse_arguments():
         default=5,
         type=int,
         help='Number of top k high score classes in a video')
-
 
 
     args = parser.parse_args()

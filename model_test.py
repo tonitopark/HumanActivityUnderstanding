@@ -18,6 +18,8 @@ if __name__ == '__main__':
             args.num_class = 600
         elif args.dataset_name == 'activitynet':
             args.num_class = 200
+        elif args.dataset_name == 'min_kinetics':
+            args.num_class = 200
 
     if args.model_name:
         if args.model_name == 'i3d':
@@ -53,7 +55,7 @@ if __name__ == '__main__':
         video_path=args.video_path,
         annotation_path=args.annotation_path,
         subset=args.test_source,
-        num_clips_per_video=6,
+        num_clips_per_video=args.num_clips_per_video,
         sample_duration=args.num_frames_test,
         frame_mapper=frame_mapper)
 
