@@ -35,7 +35,7 @@ def parse_arguments():
 
     parser.add_argument(
         '--num_clips_per_video',
-        default=4,
+        default=1,
         type=int,
         help='Number of clips to sample from each video')
 
@@ -60,13 +60,13 @@ def parse_arguments():
     )
     parser.add_argument(
         '--batch_size',
-        default=8,
+        default=36,
         type=int,
         help='Size of the batch')
 
     parser.add_argument(
         '--num_threads',
-        default=4,
+        default=0,
         type=int,
         help='Number of threads for computation ')
 
