@@ -2,6 +2,7 @@ import copy
 import json
 import math
 import os
+import fnmatch
 
 import torch.utils.data
 
@@ -12,7 +13,8 @@ from dataset.mappings import *
 def video_loader(video_path, frame_indices):
     video = []
     for i in frame_indices:
-        image_path = os.path.join(video_path, 'image_{:05d}.jpg'.format(i))
+        #image_path = os.path.join(video_path, 'image_{:05d}.jpg'.format(i))
+        image_path = os.path.join(video_path, 'frame{}.jpg'.format(i))
         if os.path.exists(image_path):
             with open(image_path, 'rb') as f:
                 with Image.open(f) as img:
@@ -79,6 +81,7 @@ def make_dataset(root_path,
                     annotations.append(value['annotations'])
                 elif subset == 'validation' or this_subset == 'val':
                     label = value['annotations']['label']
+                    label = label.replace(' ','_')
                     video_names.append('valid/{}/{}'.format(label, key))
                     annotations.append(value['annotations'])
 
@@ -102,14 +105,18 @@ def make_dataset(root_path,
         video_path = os.path.join(root_path, video_names[i][:-14])
         if not os.path.exists(video_path):
             continue
+        file_names = fnmatch.filter(os.listdir(video_path), '*.jpg')
+        #file_names = os.listdir(video_path,)
+        image_file_names = ['{:05d}'.format(int(x[5:-4])) for x in file_names if 'frame' in x]
 
-        file_names = os.listdir(video_path)
-        image_file_names = [x for x in file_names if 'image' in x]
+
+        #image_file_names = [x for x in file_names if 'image' in x]
         image_file_names.sort(reverse=True)
 
         n_frames = 0
         if image_file_names:
-            n_frames = int(image_file_names[0][6:11])
+            n_frames = int(image_file_names[0])
+            #n_frames = int(image_file_names[0][6:11])
 
         if n_frames <= 0:
             continue

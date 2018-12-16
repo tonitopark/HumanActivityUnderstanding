@@ -63,7 +63,7 @@ if __name__ == '__main__':
             args.crop_size = 224
             args.crop_method_test = 'center'
             args.crop_method_train = 'random'
-            args.num_frames_test = 16
+            args.num_frames_test = 250
 
         if args.model_name == 's3d':
             args.crop_size = 224
@@ -75,15 +75,16 @@ if __name__ == '__main__':
     torch.manual_seed(args.manual_seed)
 
     model = I3D(num_classes=args.num_class)
-    model.eval()
     model.load_state_dict(torch.load('models/model_rgb.pth'))
     model.cuda()
+    model = torch.nn.DataParallel(model, device_ids=(0,1,2,3),output_device=None)
+    model.eval()
 
     frame_mapper = ComposeMappings([
-        ResizeFrame(256),
+       # ResizeFrame(256),
         CropFramePart(args.crop_size, args.crop_method_test),
         ToTensor(),
-        NormalizeFrameToUnity(-1, 1)
+        NormalizeFrameToUnity(-1.0, 1.0)
     ])
 
     test_dataset = VideoDataset(
@@ -91,7 +92,7 @@ if __name__ == '__main__':
         video_path=args.video_path,
         annotation_path=args.annotation_path,
         subset=args.test_source,
-        num_clips_per_video=8,
+        num_clips_per_video=1,
         sample_duration=args.num_frames_test,
         frame_mapper=frame_mapper)
 
@@ -108,25 +109,31 @@ if __name__ == '__main__':
 
     result_buffer = {'results': {}}
     # sample = np.load('v_CricketShot_g04_c01_rgb.npy').transpose(0, 4, 1, 2, 3)
+
     for i, (img_tensors, targets) in enumerate(test_dataset_loader):
-        # img_tensors = torch.autograd.Variable(torch.from_numpy(sample).cuda())
+        with torch.no_grad():
+            # img_tensors = torch.autograd.Variable(torch.from_numpy(sample).cuda())
 
-        outputs, out_logit = model(img_tensors.cuda())
-        outputs = outputs.data.cpu()
-        targets = targets['label']
-        # targets = torch.tensor([227])
+            img_tensors = Variable(img_tensors)
+            _, out_logit = model(img_tensors)
+            outputs = out_logit.data.cpu()
+            del out_logit
+            targets = targets['label']
+            # targets = torch.tensor([227])
 
-        # for img in img_tensors.permute(0,2,3,4,1).contiguous().view(-1,224,224,3):
-        #     plt.imshow(img)
-        #     plt.show()
+            # for img in img_tensors.permute(0,2,3,4,1).contiguous().view(-1,224,224,3):
+            #     plt.imshow(img)
+            #     plt.show()
 
-        loss = cross_entropy(outputs, targets)
-        accuracy = calculate_accuracy(outputs, targets)
+            loss = cross_entropy(outputs, targets)
+            accuracy = calculate_accuracy(outputs, targets)
 
-        losses.update(loss.item(), img_tensors.size(0))
-        accuracies.update(accuracy, img_tensors.size(0))
+            losses.update(loss.item(), img_tensors.size(0))
+            accuracies.update(accuracy, img_tensors.size(0))
 
-        print('Loss : ', losses.avg, ' Accuracy : ', accuracies.avg)
+            del loss, accuracy
+
+            print('# ',i, '  Loss : ', losses.avg, ' Accuracy : ', accuracies.avg)
 
     print('Average_loss :', losses.avg)
     print('Average_accuracy : ', accuracies.avg)
